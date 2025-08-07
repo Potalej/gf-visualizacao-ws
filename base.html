@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visualização N-corpos (Canvas)</title>
+  <style>
+    canvas {
+      border: 1px solid black;
+    }
+  </style>
+</head>
+<body>
+    <div>
+      <p id="i">oie</p>
+      <button id="zoom_in">+</button>
+      <button id="zoom_out">-</button>
+      <p id="escala"><p>
+    </div>
+    <canvas id="canvas" width="500" height="500"></canvas>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+    
+      const width = canvas.width;
+      const height = canvas.height;
+      
+      var scale = 100
+      atualizar_escala(scale)
+
+      function atualizar_escala (nova_escala) {
+        scale = nova_escala
+        document.getElementById("escala").textContent = `${Math.round(scale,2)}`
+      }
+
+      document.getElementById("zoom_in").onclick = () => atualizar_escala(2*scale)
+      document.getElementById("zoom_out").onclick = () => atualizar_escala(scale/2)
+  
+      canvas.addEventListener("wheel", (e) => {
+        e.preventDefault();
+
+        // Calcula zoom (scroll para cima: aumenta, para baixo: diminui)
+        const zoomFactor = 1.1;
+        if (e.deltaY < 0) {
+          atualizar_escala(scale * zoomFactor)
+        } else {
+          atualizar_escala(scale / zoomFactor)
+        }
+      });
+
+      function desenhar(pontos) {
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "white";
+        ctx.fillRect(0, 0, width, height);
+        
+        ctx.fillStyle = "blue";
+        for (const [x, y] of pontos) {
+          const px = width / 2 + x * scale;
+          const py = height / 2 - y * scale;
+          ctx.beginPath();
+          ctx.arc(px, py, 2, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+      }
+    
+      // WebSocket para receber dados
+      const link = `LINK_FLAG`;
+      const ws = new WebSocket(link);
+      
+      ws.onmessage = (event) => {
+        document.getElementById('i').textContent = "Conectado";
+        if (typeof event.data !== "string" || event.data.trim() === "") {
+            console.warn("Mensagem inválida recebida: ", event.data)
+            return
+        }
+        const msg = event.data.trim();
+        const pontos = msg.split(';').map(par => par.split(',').map(Number));
+        desenhar(pontos);
+      };
+
+      setInterval(() => {
+        if (ws.bufferedAmount > 50000) {
+          console.warn("🚨 WebSocket congestionado no navegador!");
+        }
+      }, 100);
+    </script>
+</body>
+</html>

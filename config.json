@@ -1,0 +1,5 @@
+{
+    "porta": 8001,
+    "webservice": "ws://localhost:8001/ws",
+    "arquivo_base": "base.html"
+}
